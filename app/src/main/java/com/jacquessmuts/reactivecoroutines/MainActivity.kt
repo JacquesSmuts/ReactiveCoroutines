@@ -1,0 +1,83 @@
+package com.jacquessmuts.reactivecoroutines
+
+import android.os.Bundle
+import com.google.android.material.snackbar.Snackbar
+import androidx.appcompat.app.AppCompatActivity;
+import android.view.Menu
+import android.view.MenuItem
+
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.content_main.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+
+@ExperimentalCoroutinesApi
+class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
+
+    private var fabChannel = Channel<Unit>(1)
+
+    private var buttonChannel = BroadcastChannel<Unit>(1)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        setSupportActionBar(toolbar)
+
+        fab.setOnClickListener { view ->
+            fabChannel.offer(Unit)
+        }
+
+        button.setOnClickListener {
+            buttonChannel.offer(Unit)
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        return when (item.itemId) {
+            R.id.action_settings -> true
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        launch {
+            while (true){
+                fabChannel.receive()
+
+                Snackbar.make(fab, "Replace with your own action", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show()
+            }
+        }
+
+        launch {
+
+            while (true) {
+                buttonChannel.openSubscription().receive()
+
+                Snackbar.make(fab, "Replace with your own action", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        coroutineContext.cancelChildren()
+        super.onDestroy()
+    }
+}
